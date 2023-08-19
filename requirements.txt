@@ -1,0 +1,4 @@
+pandas~=1.4.4
+proplot~=0.9.7
+toml~=0.10.2
+wxpython~=4.2.1
