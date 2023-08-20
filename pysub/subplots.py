@@ -43,7 +43,7 @@ class Version:
         # 获取最后修改时间的时间戳
         timestamp = os.path.getmtime(file_path)
         self.developer = "Kimariyb, Ryan Hsiun"
-        self.version = 'v1.0.0'
+        self.version = 'v1.1.0'
         self.release_date = str(datetime.fromtimestamp(timestamp).strftime("%b-%d-%Y"))
         self.address = "XiaMen University, School of Electronic Science and Engineering"
         self.website = 'https://github.com/kimariyb/py-subplots'
@@ -398,7 +398,7 @@ def show_menu(config: SubplotsConfig):
     print("********************************************************")
     print("****************** Main function menu ******************")
     print("********************************************************")
-    print(f"-4 Set dpi of saving spectrum, current: {config.dpi}")
+    print(f"-4 Set figure layout of subplots, current: {config.sup_layout}")
     print(f"-3 Showing the serial of subplots, current: {config.is_serial}")
     print(f"-2 Set whether to share axis ticks , current: {config.is_span}")
     print(f"-1 Set whether to share axis labels, current: {config.is_share}")
@@ -408,6 +408,7 @@ def show_menu(config: SubplotsConfig):
     print(f"3 Set font size of the spectrum, current: {config.font_size}")
     print(f"4 Set figure size of spectrum file, current: {config.figure_size}")
     print(f"5 Set format of saving spectrum file, current: {config.save_format}")
+    print(f"6 Set dpi of saving spectrum, current: {config.dpi}")
 
 
 def set_dpi(config: SubplotsConfig):
@@ -534,6 +535,24 @@ def set_fontname(config: SubplotsConfig):
     print("Setting successful!\n")
 
 
+def set_layout(config: SubplotsConfig):
+    """
+    修改全局变量 LAYOUT，已达到修改字体的目的
+    :param config: 一个 SubplotsConfig 对象
+    """
+    global LAYOUT
+    # 修改全局变量的值
+    print("Type \"r\": Return to main menu")
+    layout_choice = input("Please input the figure layout that you want to set: \n")
+    if layout_choice.lower() == "r":
+        return
+    # 将输入的字符串值修改成一个 list 对象
+    LAYOUT = list(map(int, layout_choice.split(',')))
+    # 将全局变量的值赋值给 SubplotsConfig 对象
+    config.sup_layout = LAYOUT
+    print("Setting successful!\n")
+
+
 def menu(config: SubplotsConfig, toml_file):
     """
     展示主程序界面，同时执行相应的逻辑
@@ -566,6 +585,9 @@ def menu(config: SubplotsConfig, toml_file):
         # 如果输入 5，则调用 set_format 修改保存图片的格式
         elif choice == "5":
             set_format(config)
+        # 如果输入 6，则调用 set_dpi 修改保存图片的分辨率
+        elif choice == "6":
+            set_dpi(config)
         # 如果输入 -1，设置是否启动共用坐标轴标签
         elif choice == "-1":
             set_share(config)
@@ -575,9 +597,9 @@ def menu(config: SubplotsConfig, toml_file):
         # 如果输入 -3，设置是否显示子图的序号
         elif choice == "-3":
             set_serial(config)
-        # 如果输入 -4，则调用 set_dpi 修改保存图片的分辨率
+        # 如果输入 -4，则调用 set_layout 修改排版
         elif choice == "-4":
-            set_dpi(config)
+            set_layout(config)
         # 如果输入 q 则退出程序
         elif choice.lower() == "q":
             print()
@@ -634,3 +656,6 @@ def main():
         selected_file = select_file()
         # 进入主程序
         menu(config=config, toml_file=selected_file)
+
+
+main()
