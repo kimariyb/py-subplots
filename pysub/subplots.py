@@ -658,4 +658,4 @@ def main():
         menu(config=config, toml_file=selected_file)
 
 
-main()
+
