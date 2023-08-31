@@ -189,6 +189,22 @@ Hint: Press ENTER button directly can select file in a GUI window. If you want t
 
 <img src="figure/figure.png">
 
+## 有关 toml 文件
+
+toml 文件是一种记录 key-values 数据的用于存储数据的文件。pySubplots 的 toml 文件中必须存在一个 `[[file]]` 开头，这个 `[[file]]` 表示你在 toml 文件中配置了一个子图。在 `[[file]]` 中可以配置以下属性。
+
+- `path`: `string`, Multiwfn 输出的 txt 文件路径
+- `colors`: `string; list(string...)`, 绘制曲线颜色
+- `styles`: `string; list(string...)`, 绘制曲线风格
+- `legend`: `string`, 图例的文本
+- `xlim`: `list(float, float, float)`, x 轴的最小值、最大值以及间距
+- `ylim`: `list(float, float, float)`, y 轴的最小值、最大值以及间距
+- `xlabel`: `string`, x 轴的标签
+- `ylabel`: `string`, y 轴的标签
+- `title`: `string`, 标题
+- `iszero`: `bool`, 是否开启 zero 轴; 0 False；1 True
+- `islegend`: `bool`, 是否显示图例; 可以选择 0 False；1 True
+
 ## 许可证
 
 pySubplots 基于 MIT 许可证开源。这意味着您可以自由地使用、修改和分发代码。
