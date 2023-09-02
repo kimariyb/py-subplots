@@ -1,95 +1,47 @@
 [[file]]
-# Multiwfn 输出的 txt 文件路径
 path = "CH3CHO.txt"
-# 绘制曲线颜色，可以为一个字符串，也可以是一个保存字符串的 list 集合
 colors = "pink9"
-# 绘制曲线风格，可以为一个字符串，也可以是一个保存字符串的 list 集合，也可以是一个元组集合
 styles = "-"
-# 图例的文本，可以为一个字符串，也可以是一个保存字符串的 list 集合
 legend = "Acetaldehyde"
-# x 轴的最小值、最大值以及间距，必须是一个三个 float 值组成的 list 集合
 xlim = [0, 4000, 500]
-# y 轴的最小值、最大值以及间距，必须是一个三个 float 值组成的 list 集合
 ylim = [0, 3000, 1000]
-# x 轴的标签，必须是一个字符串
 xlabel = "Frequency (in cm^-1)"
-# y 轴的标签，必须是一个字符串
 ylabel = "Absorption (in L/mol/cm)"
-# 标题，必须是一个字符串
-title = ""
-# 是否开启 zero 轴，可以选择 0 False；1 True
 iszero = 0
-# 是否显示图例，可以选择 0 False；1 True
 islegend = 1
 
 [[file]]
-# Multiwfn 输出的 txt 文件路径
 path = "CH3CO2CH3.txt"
-# 绘制曲线颜色，可以为一个字符串，也可以是一个保存字符串的 list 集合
 colors = "blue9"
-# 绘制曲线风格，可以为一个字符串，也可以是一个保存字符串的 list 集合，也可以是一个元组集合
 styles = "-"
-# 图例的文本，可以为一个字符串，也可以是一个保存字符串的 list 集合
 legend = "Methyl acetate"
-# x 轴的最小值、最大值以及间距，必须是一个三个 float 值组成的 list 集合
 xlim = [0, 4000, 500]
-# y 轴的最小值、最大值以及间距，必须是一个三个 float 值组成的 list 集合
 ylim = [0, 3000, 1000]
-# x 轴的标签，必须是一个字符串
 xlabel = "Frequency (in cm^-1)"
-# y 轴的标签，必须是一个字符串
 ylabel = "Absorption (in L/mol/cm)"
-# 标题，必须是一个字符串
-title = ""
-# 是否开启 zero 轴，可以选择 0 False；1 True
 iszero = 0
-# 是否显示图例，可以选择 0 False；1 True
 islegend = 1
 
 [[file]]
-# Multiwfn 输出的 txt 文件路径
 path = "CH3COCH3.txt"
-# 绘制曲线颜色，可以为一个字符串，也可以是一个保存字符串的 list 集合
 colors = "teal9"
-# 绘制曲线风格，可以为一个字符串，也可以是一个保存字符串的 list 集合，也可以是一个元组集合
 styles = "-"
-# 图例的文本，可以为一个字符串，也可以是一个保存字符串的 list 集合
 legend = "Acetone"
-# x 轴的最小值、最大值以及间距，必须是一个三个 float 值组成的 list 集合
 xlim = [0, 4000, 500]
-# y 轴的最小值、最大值以及间距，必须是一个三个 float 值组成的 list 集合
 ylim = [0, 3000, 1000]
-# x 轴的标签，必须是一个字符串
 xlabel = "Frequency (in cm^-1)"
-# y 轴的标签，必须是一个字符串
 ylabel = "Absorption (in L/mol/cm)"
-# 标题，必须是一个字符串
-title = ""
-# 是否开启 zero 轴，可以选择 0 False；1 True
 iszero = 0
-# 是否显示图例，可以选择 0 False；1 True
 islegend = 1
 
 [[file]]
-# Multiwfn 输出的 txt 文件路径
 path = "CH3CONHCH3.txt"
-# 绘制曲线颜色，可以为一个字符串，也可以是一个保存字符串的 list 集合
 colors = "grape9"
-# 绘制曲线风格，可以为一个字符串，也可以是一个保存字符串的 list 集合，也可以是一个元组集合
 styles = "-"
-# 图例的文本，可以为一个字符串，也可以是一个保存字符串的 list 集合
 legend = "N-Methylacetamide"
-# x 轴的最小值、最大值以及间距，必须是一个三个 float 值组成的 list 集合
 xlim = [0, 4000, 500]
-# y 轴的最小值、最大值以及间距，必须是一个三个 float 值组成的 list 集合
 ylim = [0, 3000, 1000]
-# x 轴的标签，必须是一个字符串
 xlabel = "Frequency (in cm^-1)"
-# y 轴的标签，必须是一个字符串
 ylabel = "Absorption (in L/mol/cm)"
-# 标题，必须是一个字符串
-title = ""
-# 是否开启 zero 轴，可以选择 0 False；1 True
 iszero = 0
-# 是否显示图例，可以选择 0 False；1 True
 islegend = 1

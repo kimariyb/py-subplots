@@ -1,23 +1,21 @@
 import setuptools
 
-from pysub.subplots import VERSION
-
 with open("./README.md", "r", encoding="utf-8") as fh:
     long_description = fh.read()
 
 setuptools.setup(
     name="pySubplots",
-    version=VERSION.version,
-    author=VERSION.developer,
+    version="1.2.0",
+    author="Kimariyb, Ryan Hsiun",
     author_email="kimariyb@163.com",
     description="A python script for plotting multiple subplots.",
     long_description=long_description,
     long_description_content_type="text/markdown",
-    url=VERSION.website,
+    url='https://github.com/kimariyb/py-subplots',
     packages=setuptools.find_packages(),
     entry_points={
         'console_scripts': [
-            'pysub=pysub.subplots:main',
+            'subplots=pysub.subplots:main',
         ],
     },
     classifiers=[

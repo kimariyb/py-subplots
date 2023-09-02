@@ -1,3 +1,23 @@
+# -*- coding: utf-8 -*-
+"""
+subplots.py
+Briefly describe the functionality and purpose of the file.
+
+This is a Main function file!
+
+This file is part of pySubplots.
+pySubplots is a python script for plotting multiple subplots.
+
+@author:
+Kimariyb (kimariyb@163.com)
+
+@license:
+Licensed under the MIT License.
+For details, see the LICENSE file.
+
+@Data:
+2023-09-02
+"""
 import argparse
 import math
 import os
@@ -9,112 +29,332 @@ import pandas as pd
 import proplot as pplt
 import toml
 import wx
+
 from proplot import rc
 
-# 声明全局变量 LAYOUT，用于操控子图的排版
-LAYOUT = "auto"
-# 声明全局变量 DPI，用于操控保存图片的分辨率
-DPI = 300
-# 声明全局变量 SAVE_FORMAT，用于操控保存图片的格式
-SAVE_FORMAT = "png"
-# 声明全局变量 FONT_SIZE，用于操控字号
-FONT_SIZE = [10.5, 12, 14]
-# 声明全局变量 FONT_NAME，用于操控字体
-FONT_NAME = "Arial"
-# 声明全局变量 FIGURE_SIZE，用于操控画布的大小
-FIGURE_SIZE = "auto"
-# 声明全局变量 IS_SERIAL，用于操控是否开启子图序号
-IS_SERIAL = True
-# 声明全局变量 IS_SHARE，用于操控是否共用坐标轴
-IS_SHARE = True
-# 声明全局变量 IS_SPAN，用于操控是否共用坐标轴标签
-IS_SPAN = True
+# 获取当前文件被修改的最后一次时间
+time_last = os.path.getmtime(os.path.abspath(__file__))
+# 全局的静态变量
+__version__ = "1.2.0"
+__developer__ = "Kimariyb, Ryan Hsiun"
+__address__ = "XiaMen University, School of Electronic Science and Engineering"
+__website__ = "https://github.com/kimariyb/py-subplots"
+__release__ = str(datetime.fromtimestamp(time_last).strftime("%b-%d-%Y"))
 
 
-class Version:
+class SubConfig:
     """
-    用于记录版本信息和一些内容的类
-    """
+    绘制多子图时所需要的配置类
 
-    # 版本信息和有关 py-subplots 的介绍
-    def __init__(self):
-        # 获取当前文件的绝对路径
-        file_path = os.path.abspath(__file__)
-        # 获取最后修改时间的时间戳
-        timestamp = os.path.getmtime(file_path)
-        self.developer = "Kimariyb, Ryan Hsiun"
-        self.version = 'v1.1.0'
-        self.release_date = str(datetime.fromtimestamp(timestamp).strftime("%b-%d-%Y"))
-        self.address = "XiaMen University, School of Electronic Science and Engineering"
-        self.website = 'https://github.com/kimariyb/py-subplots'
-
-
-# 全局的 Version 对象
-VERSION = Version()
-
-
-class SubplotsConfig:
-    """
-    进入主程序时所使用的配置类
+    Attributes:
+        sub_num(int): The number of subplots.
+        font_family (str): Font family.
+        font_size (list): Font sizes for normal, label, and title fonts.
+        figure_size (tuple): Size of the figure.
+        sup_layout (list): Layout of subplots.
+        save_dpi (float): Resolution for saved files.
+        save_format (str): Format for saved files.
+        is_serial (bool): Whether to display serial numbers.
+        is_share (bool): Whether to share axes.
+        is_span (bool): Whether to share axis scales.
     """
 
-    def __init__(self, font_family, font_size, figure_size, is_serial, sup_layout, dpi, save_format, is_share,
-                 is_span):
+    def __init__(self, **kwargs):
+        # 构造函数逻辑
+
+        # 子图的数量，必须为 int
+        self.sub_num = kwargs.get('sub_num')
+
+        # 全局的字体 string，默认为 Arial
+        self.font_family = kwargs.get('font_family', 'Arial')
+
+        # 字体字号；分为常规字号以及标签字号，必须为 list[float, float]，默认为 [10.5, 12]
+        self.font_size = kwargs.get('font_size', [10.5, 12])
+        if self.font_size is not None and (not isinstance(self.font_size, list) or len(self.font_size) != 2):
+            raise ValueError("font_size must be a list of three floats [regular_size, label_size]")
+
+        # 图像大小，必须为 tuple(float, float)，默认为 (10, 10)
+        self.figure_size = kwargs.get('figure_size', (10, 10))
+        if self.figure_size is not None and (not isinstance(self.figure_size, tuple) or len(self.figure_size) != 2):
+            raise ValueError("figure_size must be a tuple of two floats (width, height)")
+
+        # 子图的排版，必须为 list[int, int]，默认调用 auto_layout() 方法
+        if 'sup_layout' in kwargs:
+            self.sup_layout = kwargs.get('sup_layout')
+            if self.sup_layout is not None and (not isinstance(self.sup_layout, list) or len(self.sup_layout) != 2):
+                raise ValueError("sup_layout must be a list of two ints (columns, rows)")
+        else:
+            self.sup_layout = self.auto_layout()
+
+        # 保存图片的 dpi，默认为 400
+        self.save_dpi = kwargs.get('save_dpi', 400)
+        # 保存图片的格式，默认为 PNG
+        self.save_format = kwargs.get('save_format', 'png')
+        # 是否显示序号，默认为 True
+        self.is_serial = kwargs.get('is_serial', True)
+        # 是否共享，默认为 True
+        self.is_share = kwargs.get('is_share', True)
+        self.is_span = kwargs.get('is_span', True)
+
+    def __str__(self):
         """
-        初始化 SubplotsConfig 对象
-        :param sup_layout: 子图的排版，list 类型
-        :param is_serial: 是否显示序号，bool 类型
-        :param font_family: 字体，string 类型
-        :param font_size: 字号，普通字体、label 字体和 title 字体，例如 [10.5, 12, 14]，list 类型
-        :param figure_size: 图纸的大小，例如 (4, 5)，tuple 类型
-        :param dpi: 保存文件的分辨率，float 类型
-        :param save_format: 保存文件的格式，string 类型
-        :param is_share: 是否共用坐标轴，bool 类型
-        :param is_span: 是否共用坐标轴刻度，bool 类型
+        返回 SubConfig 对象的字符串表示形式
         """
-        self.font_family = font_family
-        self.font_size = font_size
-        self.figure_size = figure_size
-        self.is_serial = is_serial
-        self.sup_layout = sup_layout
-        self.dpi = dpi
-        self.save_format = save_format
-        self.is_share = is_share
-        self.is_span = is_span
+        attributes = [
+            f"sub_num={self.sub_num}",
+            f"font_family='{self.font_family}'",
+            f"font_size={self.font_size}",
+            f"figure_size={self.figure_size}",
+            f"sup_layout={self.sup_layout}",
+            f"save_dpi={self.save_dpi}",
+            f"save_format='{self.save_format}'",
+            f"is_serial={self.is_serial}",
+            f"is_share={self.is_share}",
+            f"is_span={self.is_span}"
+        ]
+        return "SubConfig(\n  " + ",\n  ".join(attributes) + "\n)"
+
+    def auto_layout(self):
+        """
+        Automatic layout function that determines the arrangement based on the number of data points.
+        The layout algorithm factors the length of a data collection. For example, if the length is 9, it can be factored into 3 and 3, so it returns [3, 3].
+
+        Examples:
+            If the length is 15, it can be factored into 5 and 3, so it returns [5, 3].
+            Note that if a number can only be factored into two numbers, the larger number comes first.
+            If a number is a prime number and can only be factored into n and 1, it returns [n, 1].
+
+        Args:
+            self.sub_num (int): The length of the data collection.
+
+        Returns:
+            list[int, int]: A list that represents the layout information, such as [3, 3].
+        """
+        layout_list = []
+
+        # 辅助函数，判断一个数是否为质数
+        def is_prime(n):
+            if n < 2:
+                return False
+            for i in range(2, int(math.sqrt(n)) + 1):
+                if n % i == 0:
+                    return False
+            return True
+
+        if is_prime(self.sub_num):
+            # 如果数据集合长度为质数，则按照 [n, 1] 的排版方式
+            layout_list = [self.sub_num, 1]
+        else:
+            # 因式分解，找到能整除数据集合长度的两个因子
+            for i in range(int(math.sqrt(self.sub_num)), 1, -1):
+                if self.sub_num % i == 0:
+                    layout_list = [self.sub_num // i, i]
+                    break
+
+        return layout_list
+
+    def set_save_dpi(self):
+        """
+       设置 SubConfig 的 save_dpi 属性
+
+        Returns:
+            None
+        """
+        print("Type \"r\": Return to main menu")
+        your_input = input("Please input dpi of saving subplots, eg. 300\n")
+        if your_input.lower() == "r":
+            return
+        # 将输入的内容赋值给 save_dpi
+        self.save_dpi = float(your_input)
+        print("Setting successful!\n")
+
+    def toggle_serial(self):
+        """
+       设置 SubConfig 的 is_serial 属性
+
+        Returns:
+            None
+        """
+        print("Type \"r\": Return to main menu")
+        print("0 Turn off drawing of the serial")
+        print("1 Turn on drawing of the serial")
+        your_input = input("Please enter the option of your choice:\n")
+        if your_input.lower() == "r":
+            return
+        elif your_input == "0":
+            self.is_serial = False
+        elif your_input == "1":
+            self.is_serial = True
+        else:
+            print("Invalid input. Please press the Enter button and make a valid selection.")
+            input("Press Enter to continue...\n")
+        print("Setting successful!\n")
+
+    def toggle_span(self):
+        """
+       设置 SubConfig 的 is_span 属性
+
+        Returns:
+            None
+        """
+        print("Type \"r\": Return to main menu")
+        print("0 Turn off sharing axis ticks")
+        print("1 Turn on sharing axis ticks")
+        your_input = input("Please enter the option of your choice:\n")
+        if your_input.lower() == "r":
+            return
+        elif your_input == "0":
+            self.is_span = False
+        elif your_input == "1":
+            self.is_span = True
+        else:
+            print("Invalid input. Please press the Enter button and make a valid selection.")
+            input("Press Enter to continue...\n")
+        print("Setting successful!\n")
+
+    def toggle_share(self):
+        """
+       设置 SubConfig 的 is_share 属性
+
+        Returns:
+            None
+        """
+        print("Type \"r\": Return to main menu")
+        print("0 Turn off sharing axis labels")
+        print("1 Turn on sharing axis labels")
+        your_input = input("Please enter the option of your choice:\n")
+        if your_input.lower() == "r":
+            return
+        elif your_input == "0":
+            self.is_share = False
+        elif your_input == "1":
+            self.is_share = True
+        else:
+            print("Invalid input. Please press the Enter button and make a valid selection.")
+            input("Press Enter to continue...\n")
+        print("Setting successful!\n")
+
+    def set_format(self):
+        """
+       设置 SubConfig 的 save_format 属性
+
+        Returns:
+            None
+        """
+        print("Type \"r\": Return to main menu")
+        your_input = input("Please input format of saving subplots file, eg. png\n")
+        if your_input.lower() == "r":
+            return
+        # 将输入的内容赋值给 save_format
+        self.save_format = your_input
+        print("Setting successful!\n")
+
+    def set_figure_size(self):
+        """
+       设置 SubConfig 的 figure_size 属性
+
+        Returns:
+            None
+        """
+        print("Type \"r\": Return to main menu")
+        your_input = input("Please input figure size of subplots file, eg. 8,5\n")
+        if your_input.lower() == "r":
+            return
+        # 将输入的内容赋值给 figure_size
+        self.figure_size = tuple(map(float, your_input.split(',')))
+        print("Setting successful!\n")
+
+    def set_font_size(self):
+        """
+        设置 SubConfig 的 font_size 属性
+
+        Returns:
+            None
+        """
+        print("Type \"r\": Return to main menu")
+        your_input = input("Please input the font size that you want to set, eg. 10.5,12\n")
+        if your_input.lower() == "r":
+            return
+        # 将输入的内容赋值给 font_family
+        self.font_size = list(map(float, your_input.split(',')))
+        print("Setting successful!\n")
+
+    def set_font_family(self):
+        """
+        设置 SubConfig 的 font_family 属性
+
+        Returns:
+            None
+        """
+        print("Type \"r\": Return to main menu")
+        your_input = input("Please input the font family that you want to set: \n")
+        if your_input.lower() == "r":
+            return
+        # 将输入的内容赋值给 font_family
+        self.font_family = your_input
+        print("Setting successful!\n")
+
+    def set_layout(self):
+        """
+       设置 SubConfig 的 sup_layout 属性
+
+        Returns:
+            None
+        """
+        print("Type \"r\": Return to main menu")
+        your_input = input("Please input layout of subplots, eg. 3,3\n")
+        if your_input.lower() == "r":
+            return
+        # 将输入的内容赋值给 sup_layout
+        self.sup_layout = list(map(int, your_input.split(',')))
+        print("Setting successful!\n")
 
 
 class Spectrum:
     """
     用于绘制图像的 Spectrum 类，这个类必须从 toml 文件中读取
+
+    Attributes:
+        x_limit (list): X轴坐标的最小值、最大值和间隔，例如 [0, 4000, 500]，列表类型。
+        y_limit (list): Y轴坐标的最小值、最大值和间隔，例如 [0, 3000, 1000]，列表类型。
+        x_label (str): X轴标签，字符串类型。
+        y_label (str): Y轴标签，字符串类型。
+        colors (list or str): 曲线的颜色，可以是由字符串组成的列表类型，也可以是字符串类型。
+        line_style (list or str): 曲线的风格，可以是由字符串组成的列表类型，也可以是字符串类型。
+        legend_text (list or str): 图例的文本，可以是由字符串组成的列表类型，也可以是字符串类型。
+        is_zero (bool): 是否启用零轴，布尔类型。
+        is_legend (bool): 是否显示图例，布尔类型。
+        plot_data (DataFrame): 绘图数据，一个DataFrame对象。
     """
 
-    def __init__(self, x_limit, y_limit, title, x_label, y_label, colors,
-                 line_style, is_zero, is_legend, legend_text, plot_data):
+    def __init__(self, **kwargs):
         """
-        初始化 Spectrum 对象
-        :param x_limit: X 轴坐标的最小、最大值以及间距，例如 [0, 4000, 500]，list 类型
-        :param y_limit: Y 轴坐标的最小、最大值以及间距，例如 [0, 3000, 1000]，list 类型
-        :param title: 图片的标题，string 类型
-        :param x_label: X 轴标签，string 类型
-        :param y_label: Y 轴标签，string 类型
-        :param colors: 曲线的颜色，可以是一个有字符串组成的 list 类型，也可以是一个 string 类型
-        :param line_style: 曲线的风格，可以是一个有字符串组成的 list 类型，也可以是一个 string 类型
-        :param legend_text: 图例的文本，可以是一个有字符串组成的 list 类型，也可以是一个 string 类型
-        :param is_zero: 是否开启 zero 轴，bool 类型
-        :param is_legend: 是否显示图例，bool 类型
-        :param plot_data: 绘图数据，一个 DataFrame 对象
+        初始化 Spectrum 对象。
+
+        Args:
+            **kwargs: 关键字参数，包含 x_limit、y_limit、x_label、y_label、colors、line_style、legend_text、is_zero、is_legend 和 plot_data。
         """
-        self.x_limit = x_limit
-        self.y_limit = y_limit
-        self.title = title
-        self.x_label = x_label
-        self.y_label = y_label
-        self.colors = colors if isinstance(colors, list) else [colors]
-        self.line_style = line_style if isinstance(line_style, list) else [line_style]
-        self.legend_text = legend_text if isinstance(legend_text, list) else [legend_text]
-        self.is_zero = is_zero
-        self.is_legend = is_legend
-        self.plot_data = plot_data
+        # 构造函数逻辑
+        # 如果未提供 x_limit，默认为 [0, 1, 0.1]
+        self.x_limit = kwargs.get('x_limit', [0, 1, 0.1])
+        # 如果未提供 y_limit，默认为 [0, 1, 0.1]
+        self.y_limit = kwargs.get('y_limit', [0, 1, 0.1])
+        # 如果未提供 x_label，默认为 'X'
+        self.x_label = kwargs.get('x_label', 'X')
+        # 如果未提供 y_label，默认为 'Y'
+        self.y_label = kwargs.get('y_label', 'Y')
+        # 如果未提供 colors，默认为 'blue'
+        self.colors = kwargs.get('colors', 'blue')
+        # 如果未提供 line_style，默认为 '-'
+        self.line_style = kwargs.get('line_style', '-')
+        # 如果未提供 legend_text，默认为 'Curve'
+        self.legend_text = kwargs.get('legend_text', 'Curve')
+        # 如果未提供 is_zero，默认为 False
+        self.is_zero = kwargs.get('is_zero', False)
+        # 如果未提供 is_legend，默认为 True
+        self.is_legend = kwargs.get('is_legend', True)
+        # 不提供默认值，如果未提供 plot_data，则为 None
+        self.plot_data = kwargs.get('plot_data')
 
     def __str__(self):
         return f"Spectrum Object:\n" \
@@ -122,7 +362,6 @@ class Spectrum:
                f"  y_limit: {self.y_limit}\n" \
                f"  x_label: {self.x_label}\n" \
                f"  y_label: {self.y_label}\n" \
-               f"  title: {self.title}\n" \
                f"  line_style: {self.line_style}\n" \
                f"  colors: {self.colors}\n" \
                f"  legend_text: {self.legend_text}\n" \
@@ -130,84 +369,78 @@ class Spectrum:
                f"  is_zero: {self.is_zero}\n"
 
 
-def auto_layout(len_list):
+def read_path(file_path):
     """
-    自动排版功能，可以根据数据的多少自动判断，需要如何排版
-    排版的算法为，根据一个数据集合的长度，首先对其进行因式分解。例如 9 可以分为 3 和 3，则返回 [3,3]。
-    例如 15 可以分解为 5 和 3，则返回 [5,3] 注意，一个数如果能分解为两个数，则较大的一个数在前。
-    如果一个数是一个质数，只能分解为 n 和 1，则返回 [n,1]
-    :param len_list: 数据集合的长度，如 9
-    :return: 返回一个 list 集合，这个list 集合记录了排版的信息，如 [3, 3]
+    读取 toml 文件中 path 所指向的 txt 或 xlxs 文件的内容
+
+    Args:
+        file_path: toml 文件中 path 所表示的路径
+
+    Returns:
+        data(DataFrame): 返回一个 Pandas DataFrame 对象
+
     """
-    layout_list = []
-
-    # 辅助函数，判断一个数是否为质数
-    def is_prime(n):
-        if n < 2:
-            return False
-        for i in range(2, int(math.sqrt(n)) + 1):
-            if n % i == 0:
-                return False
-        return True
-
-    if is_prime(len_list):
-        # 如果数据集合长度为质数，则按照 [n, 1] 的排版方式
-        layout_list = [len_list, 1]
+    file = Path(file_path)
+    # 根据文件的后缀是否为 txt 或者 xlsx 判断
+    if file.suffix == ".txt":
+        # 如果是 Multiwfn 输出的 txt 文件，调用 Pandas 的 read_csv 方法读取
+        data = pd.read_csv(file_path, delim_whitespace=True, header=None)
+    elif file.suffix == ".xlsx":
+        # 读取包含光谱数据的 Excel 文件，假设文件包含一个名为 Sheet1 的表格
+        data = pd.read_excel(file_path, sheet_name=0, dtype={'column_name': float})
     else:
-        # 因式分解，找到能整除数据集合长度的两个因子
-        for i in range(int(math.sqrt(len_list)), 1, -1):
-            if len_list % i == 0:
-                layout_list = [len_list // i, i]
-                break
+        # 文件格式不支持
+        raise ValueError("Unsupported file format.")
 
-    return layout_list
+    return data
 
 
-def load_toml(toml_file):
+def read_toml(toml_file):
     """
     根据 toml 文件得到 spectrum 组成的集合
-    :param toml_file: toml 文件
-    :return: spectrum list
+
+    Args:
+        toml_file(str): toml 文件
+
+    Returns:
+        spectrum_list(list): 由 Spectrum 对象组成的 list 集合
     """
     # 根据 toml 文件得到 spectrum 对象
     with open(toml_file, 'r', encoding='utf-8') as file:
-        spectrum_configs = toml.load(file)
+        spectrums = toml.load(file)
+
+    # 获取 toml 文件的当前文件夹
+    current_folder = os.path.dirname(os.path.abspath(toml_file))
     # 新建一个 list 用来存放 spectrum 对象
     spectrum_list = []
     # 解析文件内容
-    for spectrum_config in spectrum_configs['file']:
-        # 新建一个 DataFrame 对象
-        data = pd.DataFrame()
+    for spectrum in spectrums['file']:
         # 拿到每一个 file 下的所有参数
-        path = spectrum_config['path']
-        # 读取 Multiwfn 输出的 txt 文件或者一个记载光谱数据的 excel 文件
-        file = Path(path)
-        # 根据文件的后缀是否为 txt 或者 xlsx 判断
-        if file.suffix == ".txt":
-            # 如果是 Multiwfn 输出的 txt 文件，调用 Pandas 的 read_csv 方法读取
-            data = pd.read_csv(file, delim_whitespace=True, header=None)
-        elif file.suffix == ".xlsx":
-            # 读取包含光谱数据的 Excel 文件，假设文件包含一个名为 Sheet1 的表格
-            data = pd.read_excel(file, sheet_name=0, dtype={'column_name': float})
+        path = spectrum['path']
+        if os.path.isabs(path):
+            # 如果是绝对路径，则直接使用该路径
+            data_source = path
         else:
-            # 文件格式不支持
-            raise ValueError("Unsupported file format.")
+            # 如果是相对路径，则与当前文件夹拼接
+            data_source = os.path.join(current_folder, path)
+        # 根据 data_source 得到数据
+        plot_data = read_path(data_source)
 
         # 解析 toml 文件中的其他参数
-        colors = spectrum_config['colors']
-        styles = spectrum_config['styles']
-        legend = spectrum_config['legend']
-        xlim = spectrum_config['xlim']
-        ylim = spectrum_config['ylim']
-        x_label = spectrum_config['xlabel']
-        y_label = spectrum_config['ylabel']
-        title = spectrum_config['title']
-        is_zero = bool(spectrum_config['iszero'])
-        is_legend = bool(spectrum_config['islegend'])
+        colors = spectrum['colors']
+        styles = spectrum['styles']
+        legend = spectrum['legend']
+        xlim = spectrum['xlim']
+        ylim = spectrum['ylim']
+        x_label = spectrum['xlabel']
+        y_label = spectrum['ylabel']
+        is_zero = bool(spectrum['iszero'])
+        is_legend = bool(spectrum['islegend'])
 
         # 初始化一个 spectrum 对象
-        spectrum = Spectrum(x_limit=xlim, y_limit=ylim, x_label=x_label, y_label=y_label, title=title, colors=colors,
-                            line_style=styles, legend_text=legend, is_zero=is_zero, is_legend=is_legend, plot_data=data)
+        spectrum = Spectrum(x_limit=xlim, y_limit=ylim, x_label=x_label, y_label=y_label, colors=colors,
+                            line_style=styles, legend_text=legend, is_zero=is_zero, is_legend=is_legend,
+                            plot_data=plot_data)
 
         # 在 spectrum 追加每一个 spectrum 对象
         spectrum_list.append(spectrum)
@@ -215,43 +448,50 @@ def load_toml(toml_file):
     return spectrum_list
 
 
-def show_head(version_info: Version):
+def validate(file):
     """
-    展示程序头，显示程序的基本信息、配置信息以及版权信息。
-    """
-    # 展示程序头
-    print(f"pySubplots -- A python script for plotting multiple subplots.")
-    print(f"Version: {version_info.version}, release date: {version_info.release_date}")
-    print(f"Developer: {version_info.developer}")
-    print(f"Address: {version_info.address}")
-    print(f"KimariDraw home website: {version_info.website}\n")
-    # 获取当前日期和时间
-    now = datetime.now().strftime("%b-%d-%Y, 00:45:%S")
-    # 程序结束后提示版权信息和问候语
-    print(f"(Copyright 2023 Kimariyb. Currently timeline: {now})\n")
+    判断输入的文件是否为 toml 文件
 
-
-def validate(toml_path):
-    """
-    判断输入的 toml 文件是否符合标准
-    :param toml_path: toml 文件的路径
+    Args:
+        file(str): toml 文件的路径
     """
     # 首先判断输入的是否为 toml 文件，如果不是，则抛出异常。并在屏幕上打印不支持该文件
-    if not toml_path.endswith(".toml"):
+    if not file.endswith(".toml"):
         raise ValueError("Error: Unsupported file format. Only TOML files are supported.\n")
 
     # 判断输入的 toml 文件是否存在，如果不存在，则抛出异常。并在屏幕上打印未找到该文件
-    if not os.path.isfile(toml_path):
+    if not os.path.isfile(file):
         raise FileNotFoundError("Error: File not found.\n")
 
 
-def select_file():
+def welcome_view():
+    """显示程序的基本信息、配置信息以及版权信息。
+
+    Returns:
+        None
     """
-    和用户交互式的选择需要输入的 toml 文件，并返回 toml 文件的路径
-    如果直接写入 toml 文件的绝对路径，则直接返回 toml_path
-    如果输入 Enter 则弹出 GUI 界面选择 toml 文件
-    如果输入 q 则退出整个程序
-    :return: toml_path
+    # 程序最后输出版本和基础信息
+    print(f"pySubplots -- A python script for plotting multiple subplots.")
+    print(f"Version: {__version__}, release date: {__release__}")
+    print(f"Developer: {__developer__}")
+    print(f"Address: {__address__}")
+    print(f"pySubplots home website: {__website__}\n")
+    # 获取当前日期和时间
+    now = datetime.now().strftime("%b-%d-%Y, 00:45:%S")
+    # 程序结束后提示版权信息和问候语
+    print(f"(Copyright (c) 2023 Kimariyb. Currently timeline: {now})\n")
+
+
+def select_file():
+    """通过命令行或者 GUI 界面选择一个文件，这个文件必须是 toml 文件，并且满足程序所指定的 toml 文件内容
+
+    Notes:
+        1. 如果直接写入 toml 文件的绝对路径，则直接返回 toml_path
+        2. 如果输入 Enter 则弹出 GUI 界面选择 toml 文件
+        3. 如果输入 q 则退出整个程序
+
+    Returns:
+        toml_path(str): 返回一个 toml 文件路径
     """
     # 创建文件对话框
     dialog = wx.FileDialog(None, "Select toml file", style=wx.FD_OPEN | wx.FD_FILE_MUST_EXIST)
@@ -279,7 +519,7 @@ def select_file():
                 print(str(e))
                 # 继续主循环
                 continue
-            print("Hint: Selected toml file path:", input_str)
+            print("Hint: Selected toml file path:", input_path)
             # 销毁对话框
             dialog.Destroy()
             # 返回 input_path
@@ -298,69 +538,42 @@ def select_file():
             return input_str
 
 
-def save_figure(config: SubplotsConfig, spectrum_list):
+def draw_spectrum(config: SubConfig, spectrum_list):
     """
-    保存图片
-    :param config: 一个 SubplotsConfig 对象
-    :param spectrum_list: 一个由 Spectrum 对象组成的 list 集合
-    :return:
-    """
-    # 文件名初始值
-    file_name = f"figure.{config.save_format}"
-    i = 1
-    # 首先检查当前路径是否存在以 figure.save_format 为文件名的文件
-    while os.path.exists(file_name):
-        # 文件名已存在，添加数字后缀
-        file_name = f"figure{i}.{SAVE_FORMAT}"
-        i += 1
-    # 调用 draw_spectrum 方法
-    fig, axs = draw_spectrum(config, spectrum_list, False)
-    # 保存光谱图
-    fig.savefig(file_name, dpi=config.dpi, bbox_inches="tight", pad_inches=0.2)
-    print()
-    print("The picture is successfully saved!")
-    print()
+    根据 SubConfig 对象和 Spectrum 对象组成的集合绘制多子图的图片
 
-
-def draw_spectrum(config: SubplotsConfig, spectrum_list, is_show):
-    """
-    根据 SubplotsConfig 和 Spectrum 对象绘制多子图的光谱
-    :param config: 一个 SubplotsConfig 对象
-    :param spectrum_list: 一个由 Spectrum 对象组成的 list 集合
-    :param is_show: 是否显示图片
+    Args:
+        config(SubConfig): 一个 SubConfig 对象
+        spectrum_list(list[Spectrum...]): 一个由 Spectrum 对象组成的 list 集合
     """
     # 设置全局属性
-    rc['font.name'] = config.font_family
-    rc['title.size'] = config.font_size[2]
+    rc['font.family'] = config.font_family
     rc['label.size'] = config.font_size[1]
     rc['font.size'] = config.font_size[0]
     rc['tick.width'] = 1.3
     rc['meta.width'] = 1.3
     rc['label.weight'] = 'bold'
+    rc['axes.labelpad'] = 8.0
     rc['tick.labelweight'] = 'bold'
     rc['ytick.major.size'] = 4.6
     rc['ytick.minor.size'] = 2.5
     rc['xtick.major.size'] = 4.6
     rc['xtick.minor.size'] = 2.5
-    # 确定子图的排版，如果 sup_layout 为 auto，则调用 auto_layout 方法；如果不是 auto，则直接跳过
-    if config.sup_layout == "auto":
-        config.sup_layout = auto_layout(len(spectrum_list))
-    # 确定图像的大小，如果 figure_size 为 auto，则通过 sup_layout 属性自动生成；如果不是 auto，则直接跳过
-    if config.figure_size == "auto":
-        config.figure_size = (4 * config.sup_layout[0], 3 * config.sup_layout[1])
+
     # 创建子图和坐标轴
     fig = pplt.figure(figsize=config.figure_size, dpi=300, span=config.is_span, share=config.is_share)
     axs = fig.subplots(nrows=config.sup_layout[0], ncols=config.sup_layout[1])
+
     for ax, spectrum in zip(axs, spectrum_list):
         # 第一列作为 x 值，第二列作为 y 值
         x = spectrum.plot_data.iloc[:, 0]
         y = spectrum.plot_data.iloc[:, 1]
         # 绘制单曲线图
-        ax.plot(x, y, color=spectrum.colors[0], linestyle=spectrum.line_style[0], label=spectrum.legend_text[0],
+        ax.plot(x, y, color=spectrum.colors, linestyle=spectrum.line_style, label=spectrum.legend_text,
                 linewidth=1.3)
 
         ax.format(
-            xlabel=spectrum.x_label, ylabel=spectrum.y_label, title=spectrum.title,
+            xlabel=spectrum.x_label, ylabel=spectrum.y_label,
             xlim=(spectrum.x_limit[0], spectrum.x_limit[1]), ylim=(spectrum.y_limit[0], spectrum.y_limit[1]),
             xminorlocator=(spectrum.x_limit[2] / 2), yminorlocator=(spectrum.y_limit[2] / 2)
         )
@@ -382,234 +595,103 @@ def draw_spectrum(config: SubplotsConfig, spectrum_list, is_show):
 
     axs.format(grid=False, abc=serial_flag, abcloc="ul")
 
-    # 如果 is_show = True，则调用 fig.show()
-    if is_show:
-        fig.show()
+    # 文件名初始值
+    save_name = f"figure.{config.save_format}"
+    i = 1
+    # 首先检查当前路径是否存在以 figure.save_type 为文件名的文件
+    while os.path.exists(save_name):
+        # 文件名已存在，添加数字后缀
+        save_name = f"figure{i}.{config.save_format}"
+        i += 1
+    # 保存图像，保存图像的名字为 figure + save_format
+    fig.savefig(save_name, dpi=300, bbox_inches="tight", pad_inches=0.2)
+    # 输出保存成功的信息
+    print("Saving successful!\n")
 
-    return fig, axs
 
-
-def show_menu(config: SubplotsConfig):
+def main_view(input_file):
     """
-    展示主页面菜单，没有实现逻辑
-    :return:
-    """
-    print(" \"q\": Exit program gracefully\t \"r\": Load a new file")
-    print("********************************************************")
-    print("****************** Main function menu ******************")
-    print("********************************************************")
-    print(f"-4 Set figure layout of subplots, current: {config.sup_layout}")
-    print(f"-3 Showing the serial of subplots, current: {config.is_serial}")
-    print(f"-2 Set whether to share axis ticks , current: {config.is_span}")
-    print(f"-1 Set whether to share axis labels, current: {config.is_share}")
-    print("0 Plot spectrum! But the effect of direct drawing is very poor, please save directly!")
-    print("1 Save graphical file of the spectrum in current folder")
-    print(f"2 Set font family of the spectrum, current: {config.font_family}")
-    print(f"3 Set font size of the spectrum, current: {config.font_size}")
-    print(f"4 Set figure size of spectrum file, current: {config.figure_size}")
-    print(f"5 Set format of saving spectrum file, current: {config.save_format}")
-    print(f"6 Set dpi of saving spectrum, current: {config.dpi}")
+    pySubplots 的主程序界面，这个界面是一个交互式的界面。用户可以输入指令自定义的绘制用户想要绘制的 subplots
 
+    Args:
+        input_file(str): toml 文件路径
 
-def set_dpi(config: SubplotsConfig):
-    """
-    修改全局变量 DPI
-    :param config: 一个 SubplotsConfig 对象
-    """
-    # 声明全局变量
-    global DPI
-    # 修改全局变量的值
-    print("Type \"r\": Return to main menu")
-    DPI = input("Please input dpi of saving spectrum, eg. 300\n")
-    if DPI.lower() == "r":
-        return
-    # 将全局变量的值赋值给 SubplotsConfig 对象
-    config.dpi = float(DPI)
-    print("Setting successful!\n")
-
-
-def set_serial(config: SubplotsConfig):
-    """
-    修改全局变量 IS_SPAN
-    :param config: 一个 SubplotsConfig 对象
-    """
-    # 声明全局变量
-    global IS_SERIAL
-    # 修改全局变量的值，取反操作
-    IS_SERIAL = not IS_SERIAL
-    # 将全局变量的值赋值给 SubplotsConfig 对象
-    config.is_share = IS_SERIAL
-
-
-def set_span(config: SubplotsConfig):
-    """
-    修改全局变量 IS_SPAN
-    :param config: 一个 SubplotsConfig 对象
-    """
-    # 声明全局变量
-    global IS_SPAN
-    # 修改全局变量的值，取反操作
-    IS_SPAN = not IS_SPAN
-    # 将全局变量的值赋值给 SubplotsConfig 对象
-    config.is_share = IS_SPAN
-
-
-def set_share(config: SubplotsConfig):
-    """
-    修改全局变量 IS_SHARE
-    :param config: 一个 SubplotsConfig 对象
-    """
-    # 声明全局变量
-    global IS_SHARE
-    # 修改全局变量的值，取反操作
-    IS_SHARE = not IS_SHARE
-    # 将全局变量的值赋值给 SubplotsConfig 对象
-    config.is_share = IS_SHARE
-
-
-def set_format(config: SubplotsConfig):
-    """
-    修改全局变量 SAVE_FORMAT，已达到修改保存图片的格式目的
-    :param config: 一个 SubplotsConfig 对象
-    """
-    # 声明全局变量
-    global SAVE_FORMAT
-    # 修改全局变量的值
-    print("Type \"r\": Return to main menu")
-    SAVE_FORMAT = input("Please input format of saving spectrum file, eg. png\n")
-    if SAVE_FORMAT.lower() == "r":
-        return
-    # 将全局变量的值赋值给 SubplotsConfig 对象
-    config.figure_size = SAVE_FORMAT
-    print("Setting successful!\n")
-
-
-def set_figsize(config: SubplotsConfig):
-    """
-    修改全局变量 FONT_SIZE，已达到修改字号的目的
-    :param config: 一个 SubplotsConfig 对象
-    """
-    global FIGURE_SIZE
-    # 修改全局变量的值
-    print("Type \"r\": Return to main menu")
-    size_choice = input("Please input figure size of spectrum file, eg. 8, 5\n")
-    if size_choice.lower() == "r":
-        return
-    # 将输入的字符串值修改成一个元组对象
-    FIGURE_SIZE = tuple(map(float, size_choice.split(',')))
-    # 将全局变量的值赋值给 SubplotsConfig 对象
-    config.figure_size = FIGURE_SIZE
-    print("Setting successful!\n")
-
-
-def set_fontsize(config: SubplotsConfig):
-    """
-    修改全局变量 FONT_SIZE，已达到修改字号的目的
-    :param config: 一个 SubplotsConfig 对象
-    """
-    # 声明全局变量
-    global FONT_SIZE
-    # 修改全局变量的值
-    print("Type \"r\": Return to main menu")
-    FONT_SIZE = input("Please input the font size that you want to set: \n")
-    if FONT_SIZE.lower() == "r":
-        return
-    # 将全局变量的值赋值给 SubplotsConfig 对象
-    config.font_size = FONT_SIZE
-    print("Setting successful!\n")
-
-
-def set_fontname(config: SubplotsConfig):
-    """
-    修改全局变量 FONT_NAME，已达到修改字体的目的
-    :param config: 一个 SubplotsConfig 对象
-    """
-    global FONT_NAME
-    # 修改全局变量的值
-    print("Type \"r\": Return to main menu")
-    FONT_NAME = input("Please input the font family that you want to set: \n")
-    if FONT_NAME.lower() == "r":
-        return
-    # 将全局变量的值赋值给 SubplotsConfig 对象
-    config.font_family = FONT_NAME
-    print("Setting successful!\n")
-
-
-def set_layout(config: SubplotsConfig):
-    """
-    修改全局变量 LAYOUT，已达到修改字体的目的
-    :param config: 一个 SubplotsConfig 对象
-    """
-    global LAYOUT
-    # 修改全局变量的值
-    print("Type \"r\": Return to main menu")
-    layout_choice = input("Please input the figure layout that you want to set: \n")
-    if layout_choice.lower() == "r":
-        return
-    # 将输入的字符串值修改成一个 list 对象
-    LAYOUT = list(map(int, layout_choice.split(',')))
-    # 将全局变量的值赋值给 SubplotsConfig 对象
-    config.sup_layout = LAYOUT
-    print("Setting successful!\n")
-
-
-def menu(config: SubplotsConfig, toml_file):
-    """
-    展示主程序界面，同时执行相应的逻辑
-    :param config: 一个 SubplotsConfig 对象
-    :param toml_file: toml 文件的路径
+    Returns:
+        None
     """
     # 读取 toml 文件，根据 toml 文件得到 spectrum_list
-    spectrum_list = load_toml(toml_file)
+    spectrum_list = read_toml(input_file)
+    # 初始化一个 SubConfig 对象，之后的操作都是操作这个 SubConfig 对象
+    config = SubConfig(sub_num=len(spectrum_list))
+
     while True:
-        # 展示主程序页面
-        show_menu(config)
+        print(" \"q\": Exit program gracefully\t \"r\": Load a new file")
+        print("********************************************************")
+        print("****************** Main function menu ******************")
+        print("********************************************************")
+        print(f"-4 Set figure layout of subplots, current: {config.sup_layout}")
+        print(f"-3 Showing the serial of subplots, current: {config.is_serial}")
+        print(f"-2 Set whether to share axis ticks , current: {config.is_span}")
+        print(f"-1 Set whether to share axis labels, current: {config.is_share}")
+        print("0 Save graphical file of the spectrum in current folder")
+        print(f"1 Set font family of the spectrum, current: {config.font_family}")
+        print(f"2 Set font size of the spectrum, current: {config.font_size}")
+        print(f"3 Set figure size of spectrum file, current: {config.figure_size}")
+        print(f"4 Set format of saving spectrum file, current: {config.save_format}")
+        print(f"5 Set dpi of saving spectrum, current: {config.save_dpi}")
+
         # 接受用户的指令，并根据用户的指令
         choice = input()
         # 如果输入 0，则按照当前参数绘制 Spectrum，调用 draw_spectrum() 方法
         if choice == "0":
-            draw_spectrum(config=config, spectrum_list=spectrum_list, is_show=True)
+            draw_spectrum(config=config, spectrum_list=spectrum_list)
             continue
-        # 如果输入 1，按照当前参数绘制的 Spectrum 保存图片，调用 save_figure() 方法
+        # 如果输入 1，调用 set_font_family() 修改字体
         elif choice == "1":
-            save_figure(config=config, spectrum_list=spectrum_list)
-        # 如果输入 2，则调用 set_fontname 修改绘制图片的字体
+            config.set_font_family()
+            continue
+        # 如果输入 2，则调用 set_font_size() 修改字号
         elif choice == "2":
-            set_fontname(config)
-        # 如果输入 3，则调用 set_fontsize 修改绘制图片的字号
+            config.set_font_size()
+            continue
+        # 如果输入 3，则调用 set_figure_size() 修改图片大小
         elif choice == "3":
-            set_fontsize(config)
-        # 如果输入 4，则调用 set_figsize 修改绘制图片的大小
+            config.set_figure_size()
+            continue
+        # 如果输入 4，则调用 set_format() 修改保存图片格式
         elif choice == "4":
-            set_figsize(config)
-        # 如果输入 5，则调用 set_format 修改保存图片的格式
+            config.set_format()
+            continue
+        # 如果输入 5，则调用 set_save_dpi() 修改保存图片 dpi
         elif choice == "5":
-            set_format(config)
-        # 如果输入 6，则调用 set_dpi 修改保存图片的分辨率
-        elif choice == "6":
-            set_dpi(config)
+            config.set_save_dpi()
+            continue
         # 如果输入 -1，设置是否启动共用坐标轴标签
         elif choice == "-1":
-            set_share(config)
+            config.toggle_share()
+            continue
         # 如果输入 -2，设置是否启动共用坐标轴刻度
         elif choice == "-2":
-            set_span(config)
+            config.toggle_span()
+            continue
         # 如果输入 -3，设置是否显示子图的序号
         elif choice == "-3":
-            set_serial(config)
-        # 如果输入 -4，则调用 set_layout 修改排版
+            config.toggle_serial()
+            continue
+        # 如果输入 -4，则调用 set_layout() 修改排版
         elif choice == "-4":
-            set_layout(config)
+            config.set_layout()
+            continue
         # 如果输入 q 则退出程序
         elif choice.lower() == "q":
             print()
             print("The program has already terminated!")
             print("Thank you for your using! Have a good time!")
-            exit()
+            sys.exit()
         # 如果输入 r 则重新加载一个新的 toml 文件
         elif choice.lower() == "r":
             toml_file = select_file()
-            spectrum_list = load_toml(toml_file)
+            spectrum_list = read_toml(toml_file)
             continue
         # 如果输入的内容不符合要求，提示按下空格重新选择。
         else:
@@ -619,10 +701,6 @@ def menu(config: SubplotsConfig, toml_file):
 
 
 def main():
-    # 初始化一个 SubplotsConfig 对象，之后的操作都是操作这个 SubplotsConfig 对象
-    config = SubplotsConfig(font_family=FONT_NAME, font_size=FONT_SIZE, figure_size=FIGURE_SIZE,
-                            is_serial=IS_SERIAL,
-                            dpi=DPI, sup_layout=LAYOUT, save_format=SAVE_FORMAT, is_share=IS_SHARE, is_span=IS_SPAN)
     # 命令行运行方式
     if len(sys.argv) > 1:
         # 处理命令行参数
@@ -634,7 +712,7 @@ def main():
         parser.add_argument('--help', '-h', action='help', help='Show this help message and exit')
         # 添加版权信息和参数
         parser.add_argument('--version', '-v', action='version', help='Show the version information',
-                            version=VERSION.version)
+                            version=__version__)
         # 添加输入文件参数
         parser.add_argument('input', type=str, help='toml file')
 
@@ -643,19 +721,19 @@ def main():
         # 处理命令行参数
         input_file = args.input
         # 展示开始界面
-        show_head(VERSION)
+        welcome_view()
         # 进入主程序
-        menu(config=config, toml_file=input_file)
+        main_view(input_file=input_file)
     # 否则就直接进入主程序
     else:
         # 展示开始界面
-        show_head(VERSION)
+        welcome_view()
         # 创建一个 wxPython 应用程序对象
         app = wx.App()
         # 选择需要解析的 toml 文件路径
         selected_file = select_file()
         # 进入主程序
-        menu(config=config, toml_file=selected_file)
+        main_view(input_file=selected_file)
 
 
-
+main()
