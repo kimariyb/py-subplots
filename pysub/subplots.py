@@ -35,7 +35,7 @@ from proplot import rc
 # 获取当前文件被修改的最后一次时间
 time_last = os.path.getmtime(os.path.abspath(__file__))
 # 全局的静态变量
-__version__ = "1.2.0"
+__version__ = "1.2.1"
 __developer__ = "Kimariyb, Ryan Hsiun"
 __address__ = "XiaMen University, School of Electronic Science and Engineering"
 __website__ = "https://github.com/kimariyb/py-subplots"
@@ -736,4 +736,4 @@ def main():
         main_view(input_file=selected_file)
 
 
-main()
+

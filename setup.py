@@ -5,7 +5,7 @@ with open("./README.md", "r", encoding="utf-8") as fh:
 
 setuptools.setup(
     name="pySubplots",
-    version="1.2.0",
+    version="1.2.1",
     author="Kimariyb, Ryan Hsiun",
     author_email="kimariyb@163.com",
     description="A python script for plotting multiple subplots.",
