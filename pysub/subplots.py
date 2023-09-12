@@ -35,7 +35,7 @@ from proplot import rc
 # 获取当前文件被修改的最后一次时间
 time_last = os.path.getmtime(os.path.abspath(__file__))
 # 全局的静态变量
-__version__ = "1.2.1"
+__version__ = "1.2.2"
 __developer__ = "Kimariyb, Ryan Hsiun"
 __address__ = "XiaMen University, School of Electronic Science and Engineering"
 __website__ = "https://github.com/kimariyb/py-subplots"
@@ -477,7 +477,7 @@ def welcome_view():
     print(f"Address: {__address__}")
     print(f"pySubplots home website: {__website__}\n")
     # 获取当前日期和时间
-    now = datetime.now().strftime("%b-%d-%Y, 00:45:%S")
+    now = datetime.now().strftime("%b-%d-%Y, %H:%M:%S")
     # 程序结束后提示版权信息和问候语
     print(f"(Copyright (c) 2023 Kimariyb. Currently timeline: {now})\n")
 
